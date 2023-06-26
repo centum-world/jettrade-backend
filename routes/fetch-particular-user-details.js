@@ -7,7 +7,7 @@ require('dotenv').config();
 const adminController = require('../controllers/adminController');
 const checkMiddleware = require('../middleware/checkAuth');
 
-router.post('/fetch-particular-user-details', adminController.fetchParticularUserDetails);
+router.post('/fetch-particular-user-details',checkMiddleware.checkAuth, adminController.fetchParticularUserDetails);
 
 
 module.exports = router;

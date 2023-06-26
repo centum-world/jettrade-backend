@@ -33,20 +33,17 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     aadhar: {
-        type: String,
-        required: true
-    },
-    aadhar_upload: {
         type: String
     },
+    
     pan: {
-        type: String,
-        required: true
-    },
-    pan_upload: {
         type: String
-
     },
+
+    Id_No:{
+        type:String
+    },
+   
     userid: {
         type: String
     },
@@ -54,7 +51,8 @@ const userSchema = new mongoose.Schema({
         type: String
     },
     otp: {
-        type: Number
+        type: Number,
+        default:0
     },
     refferal_id:{
         type:String
@@ -63,31 +61,45 @@ const userSchema = new mongoose.Schema({
         type:String
     },
     status:{
-        type:Boolean
+        type:Boolean,
+        default:false
     },
-    document: [
-        {
-            doc_type: {
-                type: String
-            },
-            front_side: {
-                type: String
-            },
-            back_side: {
-                type: String
-            }
-        }
-    ],
-    profilePhoto:[
-        {   
-            photo:{
-        
-                type:String
-            }
-        }
-    ],
-
-
+    aadhar_front_side: {
+        type: String
+    },
+    aadhar_back_side: {
+        type: String
+    },
+    pan_card: {
+        type: String
+    },
+    ID_Card:{
+        type:String
+    },
+    isBlocked:{
+        type:Boolean,
+        default:false
+    },
+    paymentStatus:{
+        type:Boolean,
+        default:false
+    },
+    paymentCount:{
+        type:Number,
+        default:0
+    },
+    doj:{
+        type:Date
+    },
+    wallet:{
+        type:Number,
+        default:0
+    },
+    isOnline:{
+        type:Boolean,
+        default:false
+    }
+    
 })
 
 // Hash your password using bcrypt
@@ -101,16 +113,16 @@ userSchema.pre('save', async function (next) {
 
 // add documnet
 
-userSchema.methods.add_document = async function (doc_type, front_side, back_side) {
+// userSchema.methods.add_document = async function (doc_type, front_side, back_side) {
 
-    try {
-        this.document = this.document.concat({ doc_type, front_side, back_side });
-        await this.save();
-        return this.document;
-    } catch (error) {
-        console.log(error);
-    }
-}
+//     try {
+//         this.document = this.document.concat({ doc_type, front_side, back_side });
+//         await this.save();
+//         return this.document;
+//     } catch (error) {
+//         console.log(error);
+//     }
+// }
 
 
 //Upload Profile Photo
@@ -130,7 +142,8 @@ userSchema.methods.add_profile_photo = async function (photo) {
 // generate token
 userSchema.methods.generateAuthToken = async function () {
     try {
-        let token = jwt.sign({ _id: this._id }, process.env.SECRET_KEY);
+        let token = jwt.sign({ _id: this._id }, process.env.SECRET_KEY,
+            { expiresIn: '28800000' });
         //this.tokens = this.tokens.concat({token:token})
         // await this.save();
         return token;

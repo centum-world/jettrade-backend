@@ -43,8 +43,9 @@ const upload = multer({
         
     }),
 });
-var multipleupload = upload.fields([{ name: 'aadhar_front_side' }, { name: 'aadhar_back_side' },{name:'pan_card'}]);
-router.post('/profileVerification',checkMiddleware.checkAuth, multipleupload, userController.profileVerification);
+
+var multipleUpload = upload.fields([{ name: 'aadhar_front_side' }, { name: 'aadhar_back_side' },{name:'pan_card'}]);
+router.post('/profileVerification', multipleUpload, userController.profileVerification);
 
 
 module.exports = router;
