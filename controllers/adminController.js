@@ -1,5 +1,6 @@
 const Admin = require('../model/adminSchema')
 const User = require('../model/userSchema')
+const jwt = require('jsonwebtoken');
 const Userdocument = require('../model/userDocumentSchema');
 const Member = require('../model/memberSchema');
 const Memberdocument = require('../model/memberDocumentSchema');
@@ -13,7 +14,9 @@ const userRefferalPayoutApproveWithdrawal = require('../model/userRefferalPayout
 const memberRefferalPayoutRequest = require('../model/memberRefferalPayoutRequestSchema');
 const memberRefferalPayoutApproveWithdrawal = require('../model/memberRefferalPayoutApproveWithdrawalSchema');
 const ChatType = require('../model/chatType');
-const chatMessage = require('../model/chatMessageSchema')
+const chatMessage = require('../model/chatMessageSchema');
+const RefferalChatType = require('../model/refferalChatType');
+const RefferalChatMessage = require('../model/refferalChatMessageSchema');
 
 require('dotenv').config();
 
@@ -33,15 +36,24 @@ exports.adminLogin = async (req, res) => {
         } else {
             if (password === adminLogin.password) {
                 //console.log('login');
-                const token = await adminLogin.generateAuthToken();
+                // const token = await adminLogin.generateAuthToken();
+                const token = jwt.sign(
+                    { userId: adminLogin._id },
+                    process.env.SECRET_KEY,
+                    { expiresIn: 6000 } // Set the token to expire in 1 hour
+                  );
 
-                console.log(token);
-                res.cookie("jwtoken", token, {
-                    expires: new Date(Date.now() + 2880000000),
-                    httpOnly: true
-                });
-
-                res.status(201).json({ message: "Admin Login Successfully", token: token });
+                // console.log(token);
+                // res.cookie("jwtoken", token, {
+                //     expires: new Date(Date.now() + 2880000000),
+                //     httpOnly: true
+                // });
+                
+                const admin_id = adminLogin.admin_id
+                res.status(201).json({ message: "Admin Login Successfully", 
+                token: token,
+                admin_id ,
+                expires: new Date().getTime() + 60000 });
             } else {
                 return res.status(404).json({ error: "Invalid Credentials" })
             }
@@ -188,44 +200,77 @@ exports.fetchMemberDocumentAdminside = async (req, res) => {
 
 // userDetailsEditAdmin 
 exports.userDetailsEditAdmin = async (req, res) => {
-    const { fname, lname, phone, address, gender, dob, aadhar, pan, id } = req.body
+    const { userWhat, fname, lname, phone, address, gender, dob, aadhar, pan, id, Id_No } = req.body
 
-    if (!fname || !lname || !phone || !address || !gender || !dob || !aadhar || !pan) {
-        return res.status(400).json({ message: "Please fill all the fields" })
+    if (userWhat === 'indian') {
+
+        if (!fname || !lname || !phone || !address || !gender || !dob || !aadhar || !pan) {
+            return res.status(400).json({ message: "Please fill all the fields" })
+        }
+
+        // const dateString = dob;
+        // const parts = dateString.split('/');
+        // const year = parseInt(parts[2]);
+        // const month = parseInt(parts[1]);
+        // const day = parseInt(parts[0]);
+        // const dateofbirth = new Date(year, month - 1, day);
+
+        // console.log(dateofbirth.toISOString());
+
+        // User.updateOne({ _id: 'id' })
+        //     .set({ fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dateofbirth, aadhar: aadhar, pan: pan })
+        User.updateOne({ _id: id }, { $set: { fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob, aadhar: aadhar, pan: pan } })
+            .then(() => {
+                return res.status(201).json({ message: "User Details Updated" })
+
+            })
+    }
+    if (userWhat === 'otherCountry') {
+
+        if (!fname || !lname || !phone || !address || !gender || !dob || !Id_No) {
+            return res.status(400).json({ message: "Please fill all the fields" })
+        }
+
+
+        User.updateOne({ _id: id }, { $set: { fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob, Id_No: Id_No } })
+            .then(() => {
+                return res.status(201).json({ message: "User Details Updated" })
+
+            })
     }
 
-    // const dateString = dob;
-    // const parts = dateString.split('/');
-    // const year = parseInt(parts[2]);
-    // const month = parseInt(parts[1]);
-    // const day = parseInt(parts[0]);
-    // const dateofbirth = new Date(year, month - 1, day);
-
-    // console.log(dateofbirth.toISOString());
-
-    // User.updateOne({ _id: 'id' })
-    //     .set({ fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dateofbirth, aadhar: aadhar, pan: pan })
-    User.updateOne({ _id: id }, { $set: { fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob, aadhar: aadhar, pan: pan } })
-        .then(() => {
-            return res.status(201).json({ message: "User Details Updated" })
-
-        })
 }
 
 // memberDetailsEditAdmin
 exports.memberDetailsEditAdmin = async (req, res) => {
-    const { fname, lname, phone, address, gender, dob, aadhar, pan, id } = req.body;
+    const { userWhat, fname, lname, phone, address, gender, dob, aadhar, pan, id, Id_No } = req.body;
 
-    if (!fname || !lname || !phone || !address || !gender || !dob || !aadhar || !pan) {
-        return res.status(400).json({ message: "Please fill all the fields" })
+    if (userWhat === 'indian') {
+        if (!fname || !lname || !phone || !address || !gender || !dob || !aadhar || !pan) {
+            return res.status(400).json({ message: "Please fill all the fields" })
+        }
+    
+    
+        Member.updateOne({ _id: id }, { $set: { fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob, aadhar: aadhar, pan: pan } })
+            .then(() => {
+                return res.status(201).json({ message: "User Details Updated" })
+    
+            })
+    }
+    if(userWhat === 'otherCountry'){
+        if (!fname || !lname || !phone || !address || !gender || !dob || !Id_No) {
+            return res.status(400).json({ message: "Please fill all the fields" })
+        }
+    
+    
+        Member.updateOne({ _id: id }, { $set: { fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob,Id_No:Id_No } })
+            .then(() => {
+                return res.status(201).json({ message: "User Details Updated" })
+    
+            })
     }
 
-
-    Member.updateOne({ _id: id }, { $set: { fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob, aadhar: aadhar, pan: pan } })
-        .then(() => {
-            return res.status(201).json({ message: "User Details Updated" })
-
-        })
+    
 
 }
 
@@ -428,9 +473,22 @@ exports.notificationForAll = async (req, res) => {
     }
     const notification = new notificationForAll({ message: message })
     await notification.save();
-    res.status(201).json({
-        message: "Notification pushed successfully"
-    })
+    console.log(notification, '431');
+    if (notification) {
+        User.updateMany({}, { notification: 1 })
+            .then(() => {
+                Member.updateMany({}, { notification: 1 })
+                    .then(() => {
+                        return res.status(201).json({ message: "Notification pushed successfully" })
+                    }).catch((error) => {
+                        console.error('Error updating notification for member', error);
+                    })
+            })
+            .catch((error) => {
+                console.error('Error Updating notification', error)
+            })
+    }
+
 
 }
 
@@ -444,9 +502,18 @@ exports.notificationForAllTraders = async (req, res) => {
     }
     const notification = new notificationForAllTrader({ investerType: investerType, message: message })
     await notification.save();
-    res.status(201).json({
-        message: "Notification pushed successfully for all traders"
-    })
+    if (notification) {
+        User.updateMany({}, { $inc: { notification: 1 } })
+            .then(() => {
+                return res.status(200).json({ message: "Notification pushed successfully" })
+            })
+            .catch((error) => {
+                console.error('Error Updating notification', error)
+            })
+    }
+    // const users = await User.find({},'notification')
+    // const notificationValues =  users.map((user) => user.notification);
+    // console.log('notification values:',notificationValues);
 }
 
 // notificationForAllRefferal
@@ -459,10 +526,18 @@ exports.notificationForAllRefferal = async (req, res) => {
     }
     const notification = new notificationForAllRefferal({ investerType: investerType, message: message })
     await notification.save();
-    res.status(201).json({
-        message: "Notification pushed successfully for all refferal"
-    })
+    if (notification) {
+
+        Member.updateMany({}, { $inc: { notification: 1 } })
+            .then(() => {
+                return res.status(201).json({ message: "Notification pushed successfully" })
+            }).catch((error) => {
+                console.error('Error updating notification for member', error);
+            })
+    }
+
 }
+
 
 // notificationForParticularTrader
 exports.notificationForParticularTrader = async (req, res) => {
@@ -478,10 +553,18 @@ exports.notificationForParticularTrader = async (req, res) => {
     }
     const notification = new notificationForParticularTrader({ userid: userid, message: message })
     await notification.save();
-    res.status(201).json({
-        message: "Notification pushed to Particular Trader"
-    })
+    if (notification) {
+
+        User.updateOne({ userid: userid }, { $inc: { notification: 1 } })
+            .then(() => {
+                return res.status(201).json({ message: "Notification pushed successfully" })
+            }).catch((error) => {
+                console.error('Error updating notification for member', error);
+            })
+    }
+
 }
+
 
 // notificationForParticularRefferal
 exports.notificationForParticularRefferal = async (req, res) => {
@@ -497,10 +580,17 @@ exports.notificationForParticularRefferal = async (req, res) => {
     }
     const notification = new notificationForParticularRefferal({ memberid: memberid, message: message })
     await notification.save();
-    res.status(201).json({
-        message: `Notification pushed to ${memberid}`
-    })
+    if (notification) {
+
+        Member.updateOne({ memberid: memberid }, { $inc: { notification: 1 } })
+            .then(() => {
+                return res.status(201).json({ message: "Notification pushed successfully" })
+            }).catch((error) => {
+                console.error('Error updating notification for member', error);
+            })
+    }
 }
+
 
 // fetchRefferalPayoutUser
 exports.fetchRefferalPayoutUser = async (req, res) => {
@@ -550,25 +640,25 @@ exports.approveUserRefferalPayout = async (req, res) => {
         let userid = user.userid;
         let walletAmount = user.walletAmount;
         let requestDate = user.requestDate
-        console.log(userid,walletAmount,requestDate,'548');
+        console.log(userid, walletAmount, requestDate, '548');
         const approveRequestAmount = new userRefferalPayoutApproveWithdrawal({ userid: userid, walletAmount: walletAmount, requestDate: requestDate, approveDate: new Date() })
         approveRequestAmount.save()
-       const deleteRequestUserRefferalPayout = await userRefferalPayoutRequest.deleteOne({_id:id})
-            if(deleteRequestUserRefferalPayout){
-                return res.status(200).json({
-                    message:"Request Approved"
-                })
-            }else{
-                return  res.status(500).json({
-                    message:"Something went wrong"
-                })
-            }
+        const deleteRequestUserRefferalPayout = await userRefferalPayoutRequest.deleteOne({ _id: id })
+        if (deleteRequestUserRefferalPayout) {
+            return res.status(200).json({
+                message: "Request Approved"
+            })
+        } else {
+            return res.status(500).json({
+                message: "Something went wrong"
+            })
+        }
     }
 
 }
 
 // fetchUserRefferalPayoutApproveWithdrawal
-exports.fetchUserRefferalPayoutApproveWithdrawal = async (req,res) => {
+exports.fetchUserRefferalPayoutApproveWithdrawal = async (req, res) => {
     userRefferalPayoutApproveWithdrawal.find((err, result) => {
         if (err) {
             return res.status(500).json({ message: "Something went wrong" })
@@ -579,7 +669,7 @@ exports.fetchUserRefferalPayoutApproveWithdrawal = async (req,res) => {
 }
 
 // adminFetchMemberRefferalPayoutRequest
-exports.adminFetchMemberRefferalPayoutRequest = async (req,res) => {
+exports.adminFetchMemberRefferalPayoutRequest = async (req, res) => {
     memberRefferalPayoutRequest.find((err, result) => {
         if (err) {
             return res.status(500).json({ message: "Something went wrong" })
@@ -590,7 +680,7 @@ exports.adminFetchMemberRefferalPayoutRequest = async (req,res) => {
 }
 
 // approveMemberRefferalPayout
-exports.approveMemberRefferalPayout = async (req,res) => {
+exports.approveMemberRefferalPayout = async (req, res) => {
     const { id } = req.body
     const member = await memberRefferalPayoutRequest.findOne({ _id: id })
     if (!member) {
@@ -602,24 +692,24 @@ exports.approveMemberRefferalPayout = async (req,res) => {
         let memberid = member.memberid;
         let walletAmount = member.walletAmount;
         let requestDate = member.requestDate
-        console.log(memberid,walletAmount,requestDate,'548');
+        console.log(memberid, walletAmount, requestDate, '548');
         const approveRequestAmount = new memberRefferalPayoutApproveWithdrawal({ memberid: memberid, walletAmount: walletAmount, requestDate: requestDate, approveDate: new Date() })
         approveRequestAmount.save()
-       const deleteRequestMemberRefferalPayout = await memberRefferalPayoutRequest.deleteOne({_id:id})
-            if(deleteRequestMemberRefferalPayout){
-                return res.status(200).json({
-                    message:"Request Approved"
-                })
-            }else{
-                return  res.status(500).json({
-                    message:"Something went wrong"
-                })
-            }
+        const deleteRequestMemberRefferalPayout = await memberRefferalPayoutRequest.deleteOne({ _id: id })
+        if (deleteRequestMemberRefferalPayout) {
+            return res.status(200).json({
+                message: "Request Approved"
+            })
+        } else {
+            return res.status(500).json({
+                message: "Something went wrong"
+            })
+        }
     }
 }
 
 // fetchMemberRefferalPayoutApproveWithdrawal
-exports.fetchMemberRefferalPayoutApproveWithdrawal = async (req,res) => {
+exports.fetchMemberRefferalPayoutApproveWithdrawal = async (req, res) => {
     memberRefferalPayoutApproveWithdrawal.find((err, result) => {
         if (err) {
             return res.status(500).json({ message: "Something went wrong" })
@@ -630,18 +720,18 @@ exports.fetchMemberRefferalPayoutApproveWithdrawal = async (req,res) => {
 }
 
 // fetchUserChatCount
-exports.fetchUserChatCount = async (req,res) => {
+exports.fetchUserChatCount = async (req, res) => {
     ChatType.find((err, result) => {
         if (err) {
             return res.status(500).json({ message: "Something went wrong" })
         } else {
             return res.status(200).json({ message: "Use Chat details fetched", result });
         }
-    })  
+    })
 }
 
 // fetchChatMessageAdmin
-exports.fetchChatMessageAdmin = async (req,res) => {
+exports.fetchChatMessageAdmin = async (req, res) => {
     const { room } = req.body;
     let adminChatMessage = await chatMessage.find({ room: room })
     if (adminChatMessage) {
@@ -655,14 +745,54 @@ exports.fetchChatMessageAdmin = async (req,res) => {
 }
 
 // UserOnlineOrNot
-exports.UserOnlineOrNot = async(req,res) =>{
+exports.UserOnlineOrNot = async (req, res) => {
     const { userid } = req.body;
-    let userOnlineOrNot= await User.findOne({ userid: userid })
+    let userOnlineOrNot = await User.findOne({ userid: userid })
     if (userOnlineOrNot) {
         const isOnline = userOnlineOrNot.isOnline
         return res.status(200).json({
             message: "User Online status fetched",
             isOnline
+        })
+    } else {
+        return res.status(500).json({ message: "Something went wrong" })
+    }
+}
+
+// fetchRefferalChatCount
+exports.fetchRefferalChatCount = async (req, res) => {
+    RefferalChatType.find((err, result) => {
+        if (err) {
+            return res.status(500).json({ message: "Something went wrong" })
+        } else {
+            return res.status(200).json({ message: "Refferal Chat details fetched", result });
+        }
+    })
+}
+
+// refferalOnlineOrNot
+exports.refferalOnlineOrNot = async (req, res) => {
+    const { memberid } = req.body;
+    let refferalOnlineOrNot = await Member.findOne({ memberid: memberid })
+    if (refferalOnlineOrNot) {
+        const isOnline = refferalOnlineOrNot.isOnline
+        return res.status(200).json({
+            message: "Member Online status fetched",
+            isOnline
+        })
+    } else {
+        return res.status(500).json({ message: "Something went wrong" })
+    }
+}
+
+// fetchRefferalChatMessageAdmin
+exports.fetchRefferalChatMessageAdmin = async (req, res) => {
+    const { room } = req.body;
+    let adminChatMessage = await RefferalChatMessage.find({ room: room })
+    if (adminChatMessage) {
+        return res.status(200).json({
+            message: "Chat message fetched",
+            adminChatMessage
         })
     } else {
         return res.status(500).json({ message: "Something went wrong" })

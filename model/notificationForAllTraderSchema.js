@@ -7,6 +7,10 @@ const notificationForAllTraderSchema = new mongoose.Schema({
     },
     message:{
         type:String
+    },
+    date:{
+        type:Date,
+        default : Date.now
     }
 
 })

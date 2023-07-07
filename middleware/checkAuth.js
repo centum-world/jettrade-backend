@@ -41,13 +41,26 @@ function verifyToken(req, res, next) {
 
     const token = req.headers['authorization']?.split(" ")[1];
     //const token1 = token.split(" ")[1];
-    //console.log(token);
+    //console.log(token,'44');
     if (!token) {
         return res.status(403).json("Unauthorized");
     }
     try {
-        const decodeToken = jwt.verify(token, process.env.SECRET_KEY);
-        req.token = decodeToken;
+        const decodeToken = jwt.verify(token, process.env.SECRET_KEY,(err, decoded)=>{
+            if(err){
+                return "Token Expired"
+            }
+            return decoded
+        });
+        console.log(decodeToken);
+        //req.token = decodeToken;
+
+        if(decodeToken == 'Token Expired'){
+            return res.send({status: "error" , data:"token expired"});
+        }
+
+
+
     } catch (error) {
         return res.status(400).json("Invalid Token");
     }

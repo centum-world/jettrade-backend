@@ -1,6 +1,7 @@
 const Razorpay = require('razorpay');
 const User = require('../model/userSchema')
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const forgetPasswordSms = require('../utils/forget-password-otp');
 require('dotenv').config();
 const ProfilePhoto = require('../model/profilePhotoSchema');
@@ -18,6 +19,8 @@ const SuccessfullRegistrationSms = require('../utils/successfull-registration');
 const PasswordReset = require('../utils/password-reset');
 const ChangePassword = require('../utils/change-password');
 
+
+
 //const profilePhoto = require('../model/profilePhotoSchema');
 
 
@@ -31,7 +34,7 @@ exports.userRegistration = async (req, res) => {
         return res.status(422).json({ message: "Please Fill all Details1!" })
 
     }
-
+    const userType = 'indian';
     const aadhar_front_side = req.files.aadhar_front_side[0].location;
     const aadhar_back_side = req.files.aadhar_back_side[0].location;
     const pan_card = req.files.pan_card[0].location;
@@ -91,7 +94,7 @@ exports.userRegistration = async (req, res) => {
                     return res.status(400).json({ message: 'Something went wrong try again!' })
                 }
 
-                const user = new User({ fname, lname, email, phone, address, gender, dob, aadhar, pan, refferal_id, reffered_id, aadhar_front_side, aadhar_back_side, pan_card, userid, password });
+                const user = new User({ fname, lname, email, phone, address, gender, dob, aadhar, pan, refferal_id, reffered_id, aadhar_front_side, aadhar_back_side, pan_card, userType, userid, password });
                 await user.save();
                 const phone1 = '+' + user.phone
                 SuccessfullRegistrationSms(phone1, { "userid": user.userid, "password": password })
@@ -123,7 +126,7 @@ exports.userRegistration = async (req, res) => {
                     return res.status(400).json({ message: 'Something went wrong try again!' })
                 }
 
-                const user = new User({ fname, lname, email, phone, address, gender, dob, aadhar, pan, refferal_id, reffered_id, aadhar_front_side, aadhar_back_side, pan_card, userid, password });
+                const user = new User({ fname, lname, email, phone, address, gender, dob, aadhar, pan, refferal_id, reffered_id, aadhar_front_side, aadhar_back_side, pan_card, userType, userid, password });
                 await user.save();
                 const phone2 = '+' + user.phone
                 SuccessfullRegistrationSms(phone2, { "userid": user.userid, "password": password })
@@ -148,7 +151,7 @@ exports.otherCountryUserRegistration = async (req, res) => {
     }
 
     const ID_Card = req.file.location;
-
+    const userType = 'otherCountry';
     //console.log(aadhar_back, aadhar_front, pan_card,'140');
 
     if (!ID_Card) {
@@ -156,12 +159,12 @@ exports.otherCountryUserRegistration = async (req, res) => {
         return res.status(422).json({ message: "All field required" })
     }
 
-    const { fname, lname, email, phone, address, gender, dob, aadhar, pan, reffered_id, userid, password, doj } = req.body;
+    const { fname, lname, email, phone, address, gender, dob, Id_No, reffered_id, userid, password, doj } = req.body;
 
     //console.log(aadhar_length.length,'35');
 
     if (userid === '' && password === '') {
-        if (!fname || !lname || !phone || !address || !gender || !dob || !reffered_id) {
+        if (!fname || !lname || !phone || !address || !gender || !Id_No || !dob || !reffered_id) {
 
             return res.status(422).json({ message: "Please Fill all Details2!" })
         } else {
@@ -192,7 +195,7 @@ exports.otherCountryUserRegistration = async (req, res) => {
                     return res.status(400).json({ message: 'Something went wrong try again!' })
                 }
 
-                const user = new User({ fname, lname, email, phone, address, gender, dob, refferal_id, reffered_id, ID_Card, userid, password });
+                const user = new User({ fname, lname, email, phone, address, gender, dob, refferal_id, reffered_id, Id_No, ID_Card, userType, userid, password });
                 await user.save();
                 const phone3 = '+' + user.phone
                 SuccessfullRegistrationSms(phone3, { "userid": user.userid, "password": password })
@@ -206,7 +209,7 @@ exports.otherCountryUserRegistration = async (req, res) => {
             }
         }
     } else {
-        if (!fname || !lname || !phone || !address || !gender || !dob || !reffered_id || !userid || !password) {
+        if (!fname || !lname || !phone || !address || !gender || !dob || !Id_No || !reffered_id || !userid || !password) {
 
             return res.status(422).json({ message: "Please Fill all Details3!" })
         }
@@ -224,7 +227,7 @@ exports.otherCountryUserRegistration = async (req, res) => {
                     return res.status(400).json({ message: 'Something went wrong try again!' })
                 }
 
-                const user = new User({ fname, lname, email, phone, address, gender, dob, refferal_id, reffered_id, ID_Card, userid, password });
+                const user = new User({ fname, lname, email, phone, address, gender, dob, refferal_id, reffered_id, Id_No, ID_Card, userType, userid, password });
                 await user.save();
                 const phone4 = '+' + user.phone
                 SuccessfullRegistrationSms(phone4, { "userid": user.userid, "password": password })
@@ -252,27 +255,32 @@ exports.userLogin = async (req, res) => {
     console.log(userLogin, '104');
 
     if (!userLogin) {
-        return res.status(404).json({ message: "Invalid Credential!" });
+        return res.status(404).json({ message: "Invalid Credential1!" });
 
     }
     const blocked = userLogin.isBlocked;
     if (!blocked) {
         try {
             const isMatch = await bcrypt.compare(password, userLogin.password);
-            const token = await userLogin.generateAuthToken();
-            console.log(token);
+            //const token = await userLogin.generateAuthToken();
+            const token = jwt.sign(
+                { userId: userLogin._id },
+                process.env.SECRET_KEY,
+                { expiresIn: 6000 } // Set the token to expire in 1 hour
+              );
+            console.log(token,'270');
             res.cookie("jwtoken", token, {
-                expires: new Date(Date.now() + 28800000),
+                expires: new Date(Date.now() + 20000),
                 httpOnly: true
             });
             if (!isMatch) {
-                return res.status(404).json({ message: "Invalid Credential!" })
+                return res.status(404).json({ message: "Invalid Credential2!" })
             } else {
                 return res.status(200).json({
                     message: "User Login successfully",
                     token: token,
                     userLogin,
-                    expires: new Date().getTime() + 28800000
+                    expires: new Date().getTime() + 60000
                 })
             }
         } catch (error) {
@@ -375,10 +383,10 @@ exports.profileVerification = async (req, res) => {
 
 // resetPassword
 exports.changePassword = async (req, res) => {
-    const { oldPassword, newPassword,token } = req.body;
-     console.log(token);
+    const { oldPassword, newPassword, token } = req.body;
+    console.log(token);
     // console.log(req.token)
-    console.log(oldPassword,newPassword,'380');
+    console.log(oldPassword, newPassword, '380');
     if (!oldPassword || !newPassword) {
         return res.status(422).json({ message: "Fields required" })
     }
@@ -388,9 +396,9 @@ exports.changePassword = async (req, res) => {
     // }
 
 
-//   const   verifyToken =req.body.verifyToken
+    //   const   verifyToken =req.body.verifyToken
 
-    const userFetchDetails = await User.findOne({token})
+    const userFetchDetails = await User.findOne({ token })
     console.log(userFetchDetails);
     if (userFetchDetails) {
 
@@ -399,7 +407,7 @@ exports.changePassword = async (req, res) => {
             userFetchDetails.password = req.body.newPassword;
             await userFetchDetails.save();
             const phone = '+' + userFetchDetails.phone
-            ChangePassword(phone, { "userid": userFetchDetails.userid, "password":req.body.newPassword })
+            ChangePassword(phone, { "userid": userFetchDetails.userid, "password": req.body.newPassword })
             return res.status(201).json({ message: "Password successfully Change" })
         } else {
             return res.status(422).json({ message: "Old Password Is Wrong1" })
@@ -478,7 +486,7 @@ exports.resetPassword = async (req, res) => {
         userFetchDetails.password = req.body.newPassword;
         await userFetchDetails.save();
         const phone = '+' + userFetchDetails.phone
-        PasswordReset(phone, { "password":req.body.newPassword })
+        PasswordReset(phone, { "password": req.body.newPassword })
 
         return res.status(201).json({ message: "Password Successfully Reset" })
     }
@@ -594,25 +602,41 @@ exports.editUserDetails = async (req, res) => {
 // saveEditedUserDetails
 exports.saveEditedUserDetails = async (req, res) => {
 
-    const { fname, lname, phone, address, gender, dob, aadhar, pan, userid } = req.body
+    const { userWhat, fname, lname, phone, address, gender, dob, aadhar, pan, Id_No, userid } = req.body
 
-    if (!fname || !lname || !phone || !address || !gender || !dob || !aadhar || !pan) {
-        return res.status(400).json({ message: "Please fill all the fields" })
+
+    if (userWhat === 'indian') {
+        if (!fname || !lname || !phone || !address || !gender || !dob || !aadhar || !pan) {
+            return res.status(400).json({ message: "Please fill all the fields" })
+        }
+        // const dateString = dob;
+        // const parts = dateString.split('/');
+        // const year = parseInt(parts[2]);
+        // const month = parseInt(parts[1]);
+        // const day = parseInt(parts[0]);
+        // const dateofbirth = new Date(year, month - 1, day);
+
+        // console.log(dateofbirth.toISOString());
+        User.updateOne({ userid: userid })
+            .set({ fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob, aadhar: aadhar, pan: pan })
+            .then(() => {
+                return res.status(201).json({ message: "User Details Updated" })
+
+            })
     }
-    // const dateString = dob;
-    // const parts = dateString.split('/');
-    // const year = parseInt(parts[2]);
-    // const month = parseInt(parts[1]);
-    // const day = parseInt(parts[0]);
-    // const dateofbirth = new Date(year, month - 1, day);
+    if (userWhat === 'other') {
+        if (!fname || !lname || !phone || !address || !gender || !dob || !Id_No) {
+            return res.status(400).json({ message: "Please fill all the fields" })
+        }
 
-    // console.log(dateofbirth.toISOString());
-    User.updateOne({ userid: userid })
-        .set({ fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob, aadhar: aadhar, pan: pan })
-        .then(() => {
-            return res.status(201).json({ message: "User Details Updated" })
+        User.updateOne({ userid: userid })
+            .set({ fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob, Id_No: Id_No })
+            .then(() => {
+                return res.status(201).json({ message: "User Details Updated" })
 
-        })
+            })
+    }
+
 
 }
 
@@ -959,7 +983,7 @@ exports.fetchChatMessageUser = async (req, res) => {
 }
 
 // AdminOnlineOrNot
-exports.AdminOnlineOrNot = async (req,res) => {
+exports.AdminOnlineOrNot = async (req, res) => {
     let adminOnline = await Admin.find()
     // console.log(adminOnline[0].isOnline,'964');
     if (adminOnline) {
@@ -971,4 +995,136 @@ exports.AdminOnlineOrNot = async (req,res) => {
     } else {
         return res.status(500).json({ message: "Something went wrong" })
     }
+}
+
+// fetchUserNotificationStatus
+exports.fetchUserNotificationStatus = async (req, res) => {
+    const { userid } = req.body;
+    let notificationStatus = await User.findOne({ userid: userid })
+    if (notificationStatus) {
+        const isNotification = notificationStatus.notification
+        return res.status(200).json({
+            message: "Notification status fetched",
+            isNotification
+        })
+    } else {
+        return res.status(500).json({ message: "Something went wrong" })
+    }
+}
+
+// setNotificationToFalseUser
+exports.setNotificationToFalseUser = async (req, res) => {
+    const { userid } = req.body;
+
+    let setNotificationStatus = await User.updateOne(
+        { userid: userid }, {
+        $set: { notification: 0 }
+
+    }
+    );
+    if (setNotificationStatus) {
+        return res.status(201).json({ message: "Notification set to zero " })
+    } else {
+        return res.status(500).json({ message: "something went wrong" })
+    }
+}
+
+// otherCountryProfileVerification
+exports.otherCountryProfileVerification = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: "No File Uploaded" })
+    }
+    const ID_Card = req.file.location;
+
+    if (!ID_Card) {
+
+        return res.status(422).json({ message: "All field required" })
+    }
+    const userid = req.body.userid;
+    // console.log(userid);
+    // ------------------------------------------
+    const user = await User.find({ userid });
+    console.log(user.length, '176');
+    if (user.length > 0) {
+        User.updateOne({ userid: userid })
+            .set({ ID_Card: ID_Card })
+            .then(() => {
+                return res.status(201).json({ message: "Document Updated" })
+
+            })
+    } else {
+        const userdocument = new User({ userid, ID_Card });
+        const success = await userdocument.save();
+
+        if (success) {
+            return res.send({
+                code: 200,
+                message: "Uploaded Successfully"
+            })
+        } else {
+            return res.send({
+                code: 500,
+                message: "Service Error"
+            })
+        }
+    }
+}
+
+// userTotalWithdrawal
+exports.userTotalWithdrawal = async (req, res) => {
+    const { userid } = req.body
+    userRefferalPayoutRequest.aggregate([
+        {
+            $match: {
+                userid: userid
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                totalDataSum: {
+                    $sum: {
+                        $add: ['$walletAmount'] // Replace with the fields you want to sum
+                    }
+                }
+            }
+        }
+    ])
+        .then((result) => {
+            if (result.length > 0) {
+                const totalSum = result[0].totalDataSum;
+                //   console.log('Total sum for user:', totalSum);
+                return res.status(200).json({
+                    message: "Sum of wallet fetched",
+                    walletAmount: totalSum
+                })
+            } else {
+                //   console.log('No data found for user');
+                return res.status(200).json({
+                    message: "No user found",
+                    data: 0
+                })
+            }
+
+
+        })
+        .catch((err) => {
+            console.error('Error executing MongoDB aggregation:', err);
+
+        });
+}
+
+// userMyTeam
+exports.userMyTeam = async (req, res) => {
+    const { refferal_id } = req.body;
+    // const query = { referral_id:reffered_id };
+
+    const myteam = await User.find({ reffered_id: refferal_id }).select('userid')
+    const myteamDetails = myteam.map(user => user.userid)
+    console.log(myteamDetails);
+    return res.status(200).json({
+        message: "My Team fetched",
+        teamMembers: myteamDetails
+    })
+
 }

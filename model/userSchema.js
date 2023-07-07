@@ -98,6 +98,13 @@ const userSchema = new mongoose.Schema({
     isOnline:{
         type:Boolean,
         default:false
+    },
+    notification:{
+        type:Number,
+        default:0
+    },
+    userType:{
+        type:String,
     }
     
 })

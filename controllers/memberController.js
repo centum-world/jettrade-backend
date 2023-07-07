@@ -1,6 +1,7 @@
 const Member = require('../model/memberSchema')
 const multer = require('multer')
-const sharp = require('sharp');
+const jwt = require('jsonwebtoken');
+// const sharp = require('sharp');
 const bcrypt = require('bcrypt');
 // const forgetPasswordSms = require('../utils/forget-password-otp');
 require('dotenv').config();
@@ -11,6 +12,10 @@ const notificationForAllRefferal = require('../model/notificationForAllRefferalS
 const notificationForParticularRefferal = require('../model/notificationForParticularRefferalSchema');
 const memberRefferalPayoutRequest = require('../model/memberRefferalPayoutRequestSchema');
 const memberRefferalPayoutApproveWithdrawal = require('../model/memberRefferalPayoutApproveWithdrawalSchema');
+const RefferalChatType = require('../model/refferalChatType');
+const ReffrealChatMessage = require('../model/refferalChatMessageSchema');
+const Admin = require('../model/adminSchema');
+const User = require('../model/userSchema');
 
 // refferalRegistration
 exports.memberRegistration = async (req, res) => {
@@ -30,7 +35,7 @@ exports.memberRegistration = async (req, res) => {
     }
 
 
-    const { fname, lname, email, phone, address, gender, dob, aadhar, pan,memberid, password } = req.body;
+    const { fname, lname, email, phone, address, gender, dob, aadhar, pan, memberid, password } = req.body;
 
     const aadhar_length = aadhar;
     const pan_length = pan;
@@ -47,7 +52,7 @@ exports.memberRegistration = async (req, res) => {
         })
     }
 
-    if (!fname || !lname || !phone || !address || !gender || !dob || !aadhar || !pan  || !memberid || !password) {
+    if (!fname || !lname || !phone || !address || !gender || !dob || !aadhar || !pan || !memberid || !password) {
 
         return res.status(422).json({ message: "Please Fill all Details!" })
     }
@@ -92,6 +97,86 @@ exports.memberRegistration = async (req, res) => {
 
 }
 
+// otherCountryMemberRegistration
+exports.otherCountryMemberRegistration = async (req, res) => {
+
+    if (!req.file) {
+        return res.status(400).json({ message: "No File Uploaded" })
+    }
+
+    const ID_Card = req.file.location;
+
+    //console.log(aadhar_back, aadhar_front, pan_card,'140');
+
+    if (!ID_Card) {
+
+        return res.status(422).json({ message: "All field required" })
+    }
+
+
+    // if (!req.files || !req.files['aadhar_front_side'] || !req.files['aadhar_back_side'] || !req.files['pan_card']) {
+
+    //     return res.status(422).json({ message: "Please Fill all Details!" })
+
+    // }
+    // const aadhar_front_side = req.files.aadhar_front_side[0].location;
+    // const aadhar_back_side = req.files.aadhar_back_side[0].location;
+    // const pan_card = req.files.pan_card[0].location;
+
+    // if (!aadhar_front_side || !aadhar_back_side || !pan_card) {
+
+    //     return res.status(422).json({ message: "All field required" })
+    // }
+
+
+    const { fname, lname, email, phone, address, gender, dob, Id_No, memberid, password } = req.body;
+
+
+
+    if (!fname || !lname || !phone || !address || !gender || !dob || !Id_No || !memberid || !password) {
+
+        return res.status(422).json({ message: "Please Fill all Details!" })
+    }
+    else {
+
+        try {
+            //const memberid = fname + Math.floor(Math.random() * 10000 + 1);
+            const refferal_id = memberid + Math.floor(Math.random() * 10000 + 1);
+            console.log(refferal_id);
+            // function makepassword(length) {
+            //     let result = '';
+            //     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%&@#';
+            //     const charactersLength = characters.length;
+            //     let counter = 0;
+            //     while (counter < length) {
+            //         result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            //         counter += 1;
+            //     }
+            //     return result;
+            // }
+
+            //const password = makepassword(8)
+            //const pass = password;
+            //console.log(pass, '49');
+
+            const memberExist = await Member.findOne({ memberid: memberid });
+            if (memberExist) {
+                return res.status(200).json({ message: 'Something went wrong try again!' })
+            }
+
+            const member = new Member({ fname, lname, email, phone, address, gender, dob, refferal_id, Id_No, ID_Card, memberid, password });
+            await member.save();
+            res.status(201).json({ message: "Member registered successfully" });
+
+
+        }
+
+        catch (error) {
+            console.log(error);
+        }
+    }
+}
+
 // memberLogin
 exports.memberLogin = async (req, res) => {
     const { memberid, password } = req.body;
@@ -99,19 +184,25 @@ exports.memberLogin = async (req, res) => {
         return res.status(422).json({ message: "Please fill all details" });
     }
     const memberLogin = await Member.findOne({ memberid: memberid });
-    const blocked = memberLogin.isBlocked;
+
     if (!memberLogin) {
         return res.status(404).json({ message: "Invalid Credential!" });
 
     }
-    if(!blocked){
+    const blocked = memberLogin.isBlocked;
+    if (!blocked) {
         try {
             const isMatch = await bcrypt.compare(password, memberLogin.password);
-            const token = await memberLogin.generateAuthToken();
+            // const token = await memberLogin.generateAuthToken();
+            const token = jwt.sign(
+                { userId: memberLogin._id },
+                process.env.SECRET_KEY,
+                { expiresIn: 60 } // Set the token to expire in 1 hour
+              );
             console.log(token);
-            
+
             res.cookie("jwtoken", token, {
-                expires: new Date(Date.now() + 28800000000),
+                expires: new Date(Date.now() + 60000),
                 httpOnly: true
             });
             if (!isMatch) {
@@ -120,17 +211,18 @@ exports.memberLogin = async (req, res) => {
                 return res.status(200).json({
                     message: "Member Login successfully",
                     token: token,
-                    memberLogin
+                    memberLogin,
+                    expires: new Date().getTime() + 60000
                 })
             }
         } catch (error) {
             console.log(error);
         }
     }
-    else{
-        return res.status(401).json({message:"Your Account is blocked!"})
+    else {
+        return res.status(401).json({ message: "Your Account is blocked!" })
     }
-    
+
 }
 
 // memberProfileVerification
@@ -406,7 +498,7 @@ exports.saveMemberEditedDetails = async (req, res) => {
 
     // console.log(dateofbirth.toISOString());
     Member.updateOne({ userid: userid })
-        .set({ fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob:dob, aadhar: aadhar, pan: pan })
+        .set({ fname: fname, lname: lname, address: address, gender: gender, phone: phone, dob: dob, aadhar: aadhar, pan: pan })
         .then(() => {
             return res.status(201).json({ message: "Member Details Updated" })
 
@@ -414,18 +506,18 @@ exports.saveMemberEditedDetails = async (req, res) => {
 }
 
 // fetchRefferalNotification
-exports.fetchRefferalNotification = async (req,res) => {
+exports.fetchRefferalNotification = async (req, res) => {
     const { memberid } = req.body;
-   const allNotitfication = await notificationForAll.find()
-   // console.log(allNotitfication);
-    if(allNotitfication){
+    const allNotitfication = await notificationForAll.find()
+    // console.log(allNotitfication);
+    if (allNotitfication) {
         const allRefferalNotification = await notificationForAllRefferal.find()
-        if(allRefferalNotification){
+        if (allRefferalNotification) {
 
-            const particularRefferal = await notificationForParticularRefferal.find({memberid:memberid})
-            if(particularRefferal){
+            const particularRefferal = await notificationForParticularRefferal.find({ memberid: memberid })
+            if (particularRefferal) {
                 res.status(200).json({
-                    message:"Member notification fetched",
+                    message: "Member notification fetched",
                     allNotitfication,
                     allRefferalNotification,
                     particularRefferal
@@ -437,17 +529,17 @@ exports.fetchRefferalNotification = async (req,res) => {
 }
 
 // memberFetchRefferalPayout
-exports.memberFetchRefferalPayout = async (req,res) => {
-    const {memberid} = req.body;
-    
+exports.memberFetchRefferalPayout = async (req, res) => {
+    const { memberid } = req.body;
 
-    const memberPayoutFetch = await Member.findOne({ memberid:memberid })
+
+    const memberPayoutFetch = await Member.findOne({ memberid: memberid })
     if (memberPayoutFetch) {
         const wallet = memberPayoutFetch.wallet
-        return res.status(200).json({ 
+        return res.status(200).json({
             message: "Member Wallet Fetched",
             wallet
-         })
+        })
 
 
     } else {
@@ -456,65 +548,194 @@ exports.memberFetchRefferalPayout = async (req,res) => {
 }
 
 // refferalPayoutRequestMember 
-exports.refferalPayoutRequestMember = async (req,res) => {
-    const {memberid,requestAmount} = req.body;
-    if(!requestAmount){
-        return res.status(422).json({message:"Please Enter Amount"})
+exports.refferalPayoutRequestMember = async (req, res) => {
+    const { memberid, requestAmount } = req.body;
+    if (!requestAmount) {
+        return res.status(422).json({ message: "Please Enter Amount" })
     }
-    const memberWalletFetch = await Member.findOne({ memberid:memberid })
-    if(memberWalletFetch){
+    const memberWalletFetch = await Member.findOne({ memberid: memberid })
+    if (memberWalletFetch) {
         let walletAmount = memberWalletFetch.wallet;
-        if(requestAmount > walletAmount){
-           return res.status(400).json({
-                message:"Insufficient Balance"
+        if (requestAmount > walletAmount) {
+            return res.status(400).json({
+                message: "Insufficient Balance"
             })
-        }else{
+        } else {
             const restAmount = walletAmount - requestAmount
             let requestDate = new Date()
-            const requestWithdrawal = new memberRefferalPayoutRequest({memberid,walletAmount:requestAmount,requestDate})
+            const requestWithdrawal = new memberRefferalPayoutRequest({ memberid, walletAmount: requestAmount, requestDate })
             await requestWithdrawal.save();
-            if(requestWithdrawal){
-                await Member.updateOne({memberid:memberid},{
+            if (requestWithdrawal) {
+                await Member.updateOne({ memberid: memberid }, {
                     $set: {
-                        wallet:restAmount
+                        wallet: restAmount
                     }
                 })
                 return res.status(201).json({
-                    message:"Withdrawal request sent"
+                    message: "Withdrawal request sent"
                 })
-            }else{
-                return res.status(500).json({message:"Something went wrong"})
+            } else {
+                return res.status(500).json({ message: "Something went wrong" })
             }
         }
-       // console.log(walletAmount,'694');
-        
+        // console.log(walletAmount,'694');
+
     }
 }
 
 // fetchMemberRefferalPayoutRequestWithdrawal
-exports.fetchMemberRefferalPayoutRequestWithdrawal = async (req,res) => {
-    const {memberid} = req.body;
-    let memberWithdrawalRequest = await memberRefferalPayoutRequest.find({ memberid:memberid })
+exports.fetchMemberRefferalPayoutRequestWithdrawal = async (req, res) => {
+    const { memberid } = req.body;
+    let memberWithdrawalRequest = await memberRefferalPayoutRequest.find({ memberid: memberid })
     if (memberWithdrawalRequest) {
-        return res.status(200).json({ 
+        return res.status(200).json({
             message: "Withdrawal Request fetched",
             memberWithdrawalRequest
-         })
+        })
     } else {
         return res.status(500).json({ message: "Something went wrong" })
-    } 
+    }
 }
 
 // memberFetchRefferalPayoutApproveWithdrawal
-exports.memberFetchRefferalPayoutApproveWithdrawal = async(req,res) => {
-    const {memberid} = req.body;
-    let memberApproveWithdrawal = await memberRefferalPayoutApproveWithdrawal.find({ memberid:memberid })
+exports.memberFetchRefferalPayoutApproveWithdrawal = async (req, res) => {
+    const { memberid } = req.body;
+    let memberApproveWithdrawal = await memberRefferalPayoutApproveWithdrawal.find({ memberid: memberid })
     if (memberApproveWithdrawal) {
-        return res.status(200).json({ 
+        return res.status(200).json({
             message: " Approved withdrawal fetched",
             memberApproveWithdrawal
-         })
+        })
     } else {
         return res.status(500).json({ message: "Something went wrong" })
-    } 
+    }
+}
+
+// fetchMemberNotificationStatus
+exports.fetchMemberNotificationStatus = async (req, res) => {
+    const { memberid } = req.body;
+    let notificationStatus = await Member.findOne({ memberid: memberid })
+    if (notificationStatus) {
+        const isNotification = notificationStatus.notification
+        return res.status(200).json({
+            message: "Notification status fetched",
+            isNotification
+        })
+    } else {
+        return res.status(500).json({ message: "Something went wrong" })
+    }
+}
+
+// setNotificationToFalseMember
+exports.setNotificationToFalseMember = async (req, res) => {
+    const { memberid } = req.body;
+
+    let setNotificationStatus = await Member.updateOne({ memberid: memberid },
+        {
+            $set: { notification: 0 }
+        }
+    );
+    if (setNotificationStatus) {
+        return res.status(201).json({ message: "Notification set to zero " })
+    } else {
+        return res.status(500).json({ message: "something went wrong" })
+    }
+}
+
+// fetchChatDetailsRefferal
+exports.fetchChatDetailsRefferal = async (req, res) => {
+    const { memberid } = req.body;
+    let refferalChatDetails = await RefferalChatType.find({ memberid: memberid })
+    if (refferalChatDetails) {
+        return res.status(200).json({
+            message: " Refferal Chat details fetched",
+            refferalChatDetails
+        })
+    } else {
+        return res.status(500).json({ message: "Something went wrong" })
+    }
+}
+
+// fetchChatMessageRefferal
+exports.fetchChatMessageRefferal = async (req, res) => {
+    const { room } = req.body;
+    let refferalChatMessage = await ReffrealChatMessage.find({ room: room })
+    if (refferalChatMessage) {
+        return res.status(200).json({
+            message: "Chat message fetched",
+            refferalChatMessage
+        })
+    } else {
+        return res.status(500).json({ message: "Something went wrong" })
+    }
+}
+
+// adminOnlineOrNotRefferal
+exports.adminOnlineOrNotRefferal = async (req, res) => {
+    let adminOnline = await Admin.find()
+    // console.log(adminOnline[0].isOnline,'964');
+    if (adminOnline) {
+        const isOnline = adminOnline[0].isOnline
+        return res.status(200).json({
+            message: "Admin Online status fetched",
+            isOnline
+        })
+    } else {
+        return res.status(500).json({ message: "Something went wrong" })
+    }
+}
+
+// refferalTotalWithdrawal
+exports.refferalTotalWithdrawal = async (req, res) => {
+    const { memberid } = req.body
+    memberRefferalPayoutRequest.aggregate([
+        {
+            $match: {
+                memberid: memberid
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                totalDataSum: {
+                    $sum: {
+                        $add: ['$walletAmount'] // Replace with the fields you want to sum
+                    }
+                }
+            }
+        }
+    ])
+        .then((result) => {
+            if (result.length > 0) {
+                const totalSum = result[0].totalDataSum;
+                //   console.log('Total sum for user:', totalSum);
+                return res.status(200).json({
+                    message: "Sum of wallet fetched",
+                    walletAmount: totalSum
+                })
+            } else {
+                //   console.log('No data found for user');
+                return res.status(200).json({
+                    message: "No Member found",
+                    data: 0
+                })
+            }
+        })
+        .catch((err) => {
+            console.error('Error executing MongoDB aggregation:', err);
+        });
+}
+
+// refferalMyTeam
+exports.refferalMyTeam = async (req, res) => {
+    const { refferal_id } = req.body;
+    // const query = { referral_id:reffered_id };
+
+    const myteam = await User.find({ reffered_id: refferal_id }).select('userid')
+    const myteamDetails = myteam.map(user => user.userid)
+    console.log(myteamDetails);
+    return res.status(200).json({
+        message: "My Team fetched",
+        teamMembers: myteamDetails
+    })
 }

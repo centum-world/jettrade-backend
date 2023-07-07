@@ -61,6 +61,14 @@ const fetchChatMessageAdmin = require('./routes/fetch-chat-message-admin');
 const otherCountryUserRegistration = require('./routes/users/other-country-user-registration');
 const UserOnlineOrNot = require('./routes/user-online-or-not');
 const AdminOnlineOrNot = require('./routes/users/admin-online-or-not');
+const fetchUserNotificationStatus = require('./routes/users/fetch-user-notification-status');
+const setNotificationToFalseUser = require('./routes/users/set-notification-to-false-user');
+const fetchRefferalChatCount = require('./routes/fetch-refferal-chat-count');
+const refferalOnlineOrNot = require('./routes/refferal-online-or-not');
+const fetchRefferalChatMessageAdmin = require('./routes/fetch-refferal-chat-message-admin');
+const otherCountryProfileVerification = require('./routes/users/other-country-profile-verification');
+const userTotalWithdrawal = require('./routes/users/user-total-withdrawal');
+const userMyTeam = require('./routes/users/user-my-team');
  
 
 
@@ -88,6 +96,14 @@ const memberFetchRefferalPayout = require('./routes/refferal/member-fetch-reffer
 const refferalPayoutRequestMember = require('./routes/refferal/refferal-payout-request-member');
 const fetchMemberRefferalPayoutRequestWithdrawal = require('./routes/refferal/fetch-member-refferal-payout-request-withdrawal');
 const memberFetchRefferalPayoutApproveWithdrawal = require('./routes/refferal/member-fetch-refferal-payout-approve-withdrawal');
+const otherCountryMemberRegistration = require('./routes/refferal/other-country-member-registration');
+const fetchMemberNotificationStatus = require('./routes/refferal/fetch-member-notification-status');
+const setNotificationToFalseMember = require('./routes/refferal/set-notification-to-false-member');
+const fetchChatDetailsRefferal = require('./routes/refferal/fetch-chat-details-refferal');
+const fetchChatMessageRefferal = require('./routes/refferal/fetch-chat-message-refferal');
+const adminOnlineOrNotRefferal = require('./routes/refferal/admin-online-or-not-refferal');
+const refferalTotalWithdrawal = require('./routes/refferal/refferal-total-withdrawal');
+const refferalMyTeam = require('./routes/refferal/refferal-my-team');
 
  
 
@@ -164,6 +180,14 @@ app.use('/admin',fetchChatMessageAdmin);
 app.use('/user',otherCountryUserRegistration);
 app.use('/admin',UserOnlineOrNot);
 app.use('/user',AdminOnlineOrNot);
+app.use('/user',fetchUserNotificationStatus);
+app.use('/user',setNotificationToFalseUser);
+app.use('/admin',fetchRefferalChatCount);
+app.use('/admin',refferalOnlineOrNot);
+app.use('/admin',fetchRefferalChatMessageAdmin);
+app.use('/user',otherCountryProfileVerification);
+app.use('/user',userTotalWithdrawal);
+app.use('/user',userMyTeam);
 
 
 // refferal
@@ -189,6 +213,14 @@ app.use('/member',memberFetchRefferalPayout);
 app.use('/member',refferalPayoutRequestMember);
 app.use('/member',fetchMemberRefferalPayoutRequestWithdrawal);
 app.use('/member',memberFetchRefferalPayoutApproveWithdrawal);
+app.use('/member',otherCountryMemberRegistration);
+app.use('/member',fetchMemberNotificationStatus);
+app.use('/member',setNotificationToFalseMember);
+app.use('/member',fetchChatDetailsRefferal);
+app.use('/member',fetchChatMessageRefferal);
+app.use('/member',adminOnlineOrNotRefferal);
+app.use('/member',refferalTotalWithdrawal);
+app.use('/member',refferalMyTeam);
 
 
 

@@ -35,11 +35,12 @@ const memberSchema = new mongoose.Schema({
     },
     aadhar: {
         type: String,
-        required: true
     },
     pan: {
         type: String,
-        required: true
+    },
+    Id_No:{
+        type:String
     },
     memberid: {
         type: String
@@ -69,6 +70,9 @@ const memberSchema = new mongoose.Schema({
     pan_card: {
         type: String
     },
+    ID_Card:{
+        type:String
+    },
     isBlocked:{
         type:Boolean,
         default:false
@@ -76,7 +80,19 @@ const memberSchema = new mongoose.Schema({
     wallet:{
         type:Number,
         default:0
+    },
+    notification:{
+        type:Number,
+        default:0
+    },
+    isOnline:{
+        type:Boolean,
+        default:false
+    },
+    userType:{
+        type:String,
     }
+
 
 
 })
