@@ -16,6 +16,7 @@ const RefferalChatType = require('../model/refferalChatType');
 const ReffrealChatMessage = require('../model/refferalChatMessageSchema');
 const Admin = require('../model/adminSchema');
 const User = require('../model/userSchema');
+const validator = require('validator');
 
 // refferalRegistration
 exports.memberRegistration = async (req, res) => {
@@ -36,6 +37,11 @@ exports.memberRegistration = async (req, res) => {
 
 
     const { fname, lname, email, phone, address, gender, dob, aadhar, pan, memberid, password } = req.body;
+
+
+    if (!validator.isEmail(email)) {
+        return res.status(400).json({ message: 'Invalid email address' });
+    }
 
     const aadhar_length = aadhar;
     const pan_length = pan;
@@ -80,7 +86,7 @@ exports.memberRegistration = async (req, res) => {
 
             const memberExist = await Member.findOne({ memberid: memberid });
             if (memberExist) {
-                return res.status(200).json({ message: 'Something went wrong try again!' })
+                return res.status(200).json({ message: 'Member already exist!' })
             }
 
             const member = new Member({ fname, lname, email, phone, address, gender, dob, aadhar, pan, refferal_id, aadhar_front_side, aadhar_back_side, pan_card, memberid, password });
@@ -131,6 +137,10 @@ exports.otherCountryMemberRegistration = async (req, res) => {
 
     const { fname, lname, email, phone, address, gender, dob, Id_No, memberid, password } = req.body;
 
+    if (!validator.isEmail(email)) {
+        return res.status(400).json({ message: 'Invalid email address' });
+    }
+
 
 
     if (!fname || !lname || !phone || !address || !gender || !dob || !Id_No || !memberid || !password) {
@@ -161,7 +171,7 @@ exports.otherCountryMemberRegistration = async (req, res) => {
 
             const memberExist = await Member.findOne({ memberid: memberid });
             if (memberExist) {
-                return res.status(200).json({ message: 'Something went wrong try again!' })
+                return res.status(200).json({ message: 'Member already exist' })
             }
 
             const member = new Member({ fname, lname, email, phone, address, gender, dob, refferal_id, Id_No, ID_Card, memberid, password });

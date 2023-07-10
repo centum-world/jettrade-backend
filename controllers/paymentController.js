@@ -85,3 +85,52 @@ exports.verifyPayment = async (req, res) => {
     // response = {"signatureIsValid":"true"}
     
 }
+
+//userAddingWalletCreatePayment
+exports.userAddingWalletCreatePayment = async(req,res) => {
+    const razorpay = new Razorpay({
+        key_id: 'rzp_test_RvU9CuKT2BsDrz',
+        key_secret: 'F37rnpOlGKDpsg512ZtjnBWt',
+    });
+    const {order_id,amount,userid } = req.body;
+
+    const options = {
+        amount: amount * 100, // The payment amount in paise (e.g., Rs. 10.00)
+        currency:'INR',
+        receipt: order_id,
+        payment_capture: 1,
+        
+    };
+
+
+    try {
+        const order = await razorpay.orders.create(options);
+        if(order){
+            res.status(200).json({
+                message:"Order Created", data:order
+            })
+        }else{
+            res.status(500).json({message:"Something Went wrong"})
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Failed to create order');
+    }
+}
+
+// userAddingWalletVerifyPayment
+exports.userAddingWalletVerifyPayment = async(req,res) => {
+    let body = req.body.response.razorpay_order_id + "|" + req.body.response.razorpay_payment_id;
+    var expectedSignature = crypto.createHmac('sha256','F37rnpOlGKDpsg512ZtjnBWt')
+    .update(body.toString())
+    .digest('hex');
+
+    const response = {"signatureIsValid":'false'}
+    if(expectedSignature === req.body.response.razorpay_signature) 
+    {
+        res.send({code:200 , message:"Payment Successfull"});
+
+    }else{
+        res.send({code:500, message:"Payment failed"})
+    }
+}

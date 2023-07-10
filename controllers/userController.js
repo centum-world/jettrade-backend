@@ -18,6 +18,7 @@ const Admin = require('../model/adminSchema');
 const SuccessfullRegistrationSms = require('../utils/successfull-registration');
 const PasswordReset = require('../utils/password-reset');
 const ChangePassword = require('../utils/change-password');
+const validator = require('validator');
 
 
 
@@ -47,6 +48,10 @@ exports.userRegistration = async (req, res) => {
 
     const { fname, lname, email, phone, address, gender, dob, aadhar, pan, reffered_id, userid, password, doj } = req.body;
 
+
+    if (!validator.isEmail(email)) {
+        return res.status(400).json({ message: 'Invalid email address' });
+    }
 
     const aadhar_length = aadhar;
     const pan_length = pan;
@@ -91,7 +96,7 @@ exports.userRegistration = async (req, res) => {
 
                 const userExist = await User.findOne({ userid: userid });
                 if (userExist) {
-                    return res.status(400).json({ message: 'Something went wrong try again!' })
+                    return res.status(400).json({ message: 'User already exist!' })
                 }
 
                 const user = new User({ fname, lname, email, phone, address, gender, dob, aadhar, pan, refferal_id, reffered_id, aadhar_front_side, aadhar_back_side, pan_card, userType, userid, password });
@@ -123,7 +128,7 @@ exports.userRegistration = async (req, res) => {
 
                 const userExist = await User.findOne({ userid: userid });
                 if (userExist) {
-                    return res.status(400).json({ message: 'Something went wrong try again!' })
+                    return res.status(400).json({ message: 'User already exist!' })
                 }
 
                 const user = new User({ fname, lname, email, phone, address, gender, dob, aadhar, pan, refferal_id, reffered_id, aadhar_front_side, aadhar_back_side, pan_card, userType, userid, password });
@@ -162,6 +167,9 @@ exports.otherCountryUserRegistration = async (req, res) => {
     const { fname, lname, email, phone, address, gender, dob, Id_No, reffered_id, userid, password, doj } = req.body;
 
     //console.log(aadhar_length.length,'35');
+    if (!validator.isEmail(email)) {
+        return res.status(400).json({ message: 'Invalid email address' });
+    }
 
     if (userid === '' && password === '') {
         if (!fname || !lname || !phone || !address || !gender || !Id_No || !dob || !reffered_id) {
@@ -192,7 +200,7 @@ exports.otherCountryUserRegistration = async (req, res) => {
 
                 const userExist = await User.findOne({ userid: userid });
                 if (userExist) {
-                    return res.status(400).json({ message: 'Something went wrong try again!' })
+                    return res.status(400).json({ message: 'User already exist!' })
                 }
 
                 const user = new User({ fname, lname, email, phone, address, gender, dob, refferal_id, reffered_id, Id_No, ID_Card, userType, userid, password });
@@ -267,8 +275,8 @@ exports.userLogin = async (req, res) => {
                 { userId: userLogin._id },
                 process.env.SECRET_KEY,
                 { expiresIn: 6000 } // Set the token to expire in 1 hour
-              );
-            console.log(token,'270');
+            );
+            console.log(token, '270');
             res.cookie("jwtoken", token, {
                 expires: new Date(Date.now() + 20000),
                 httpOnly: true
@@ -1127,4 +1135,30 @@ exports.userMyTeam = async (req, res) => {
         teamMembers: myteamDetails
     })
 
+}
+
+// userUpdateWalletAfterAdding
+exports.userUpdateWalletAfterAdding = async(req,res) => {
+    const {userid,amount} = req.body;
+    const userExist = await User.findOne({userid:userid})
+    const tradingWallet = userExist.tradingWallet;
+
+    // console.log(amount,'1146');
+    const updateWallet = await User.updateOne({ userid: userid }, {
+        $set: {
+            tradingWallet: tradingWallet + amount,
+            
+        }
+    })
+    if(updateWallet){
+        return res.status(200).json({
+            message:"wallet added",
+            tradingWallet
+        })
+    }else{
+        return res.status(400).json({
+            message:'Payment failed'
+        })
+    }
+    
 }

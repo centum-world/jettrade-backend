@@ -105,6 +105,10 @@ const userSchema = new mongoose.Schema({
     },
     userType:{
         type:String,
+    },
+    tradingWallet:{
+        type:Number,
+        default:0
     }
     
 })

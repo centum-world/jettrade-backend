@@ -69,6 +69,9 @@ const fetchRefferalChatMessageAdmin = require('./routes/fetch-refferal-chat-mess
 const otherCountryProfileVerification = require('./routes/users/other-country-profile-verification');
 const userTotalWithdrawal = require('./routes/users/user-total-withdrawal');
 const userMyTeam = require('./routes/users/user-my-team');
+const userAddingWalletCreatePayment = require('./routes/users/user-adding-wallet-create-payment');
+const userAddingWalletVerifyPayment = require('./routes/users/user-adding-wallet-verify-payment');
+const userUpdateWalletAfterAdding = require('./routes/users/user-update-wallet-after-adding');
  
 
 
@@ -188,6 +191,9 @@ app.use('/admin',fetchRefferalChatMessageAdmin);
 app.use('/user',otherCountryProfileVerification);
 app.use('/user',userTotalWithdrawal);
 app.use('/user',userMyTeam);
+app.use('/user',userAddingWalletCreatePayment);
+app.use('/user',userAddingWalletVerifyPayment);
+app.use('/user',userUpdateWalletAfterAdding);
 
 
 // refferal
