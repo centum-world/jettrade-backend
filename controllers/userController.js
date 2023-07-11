@@ -102,8 +102,10 @@ exports.userRegistration = async (req, res) => {
                 const user = new User({ fname, lname, email, phone, address, gender, dob, aadhar, pan, refferal_id, reffered_id, aadhar_front_side, aadhar_back_side, pan_card, userType, userid, password });
                 await user.save();
                 const phone1 = '+' + user.phone
-                SuccessfullRegistrationSms(phone1, { "userid": user.userid, "password": password })
-                res.status(201).json({ message: "User registered successfully" });
+                // SuccessfullRegistrationSms(phone1, { "userid": user.userid, "password": password })
+                res.status(201).json({ message: "User registered successfully",
+                userid,password
+            });
 
 
             }
@@ -134,8 +136,10 @@ exports.userRegistration = async (req, res) => {
                 const user = new User({ fname, lname, email, phone, address, gender, dob, aadhar, pan, refferal_id, reffered_id, aadhar_front_side, aadhar_back_side, pan_card, userType, userid, password });
                 await user.save();
                 const phone2 = '+' + user.phone
-                SuccessfullRegistrationSms(phone2, { "userid": user.userid, "password": password })
-                res.status(201).json({ message: "User registered successfully" });
+                // SuccessfullRegistrationSms(phone2, { "userid": user.userid, "password": password })
+                res.status(201).json({ message: "User registered successfully",
+                userid,password
+            });
 
 
             }
@@ -206,8 +210,10 @@ exports.otherCountryUserRegistration = async (req, res) => {
                 const user = new User({ fname, lname, email, phone, address, gender, dob, refferal_id, reffered_id, Id_No, ID_Card, userType, userid, password });
                 await user.save();
                 const phone3 = '+' + user.phone
-                SuccessfullRegistrationSms(phone3, { "userid": user.userid, "password": password })
-                res.status(201).json({ message: "User registered successfully" });
+                // SuccessfullRegistrationSms(phone3, { "userid": user.userid, "password": password })
+                res.status(201).json({ message: "User registered successfully",
+                userid,password
+            });
 
 
             }
@@ -238,8 +244,10 @@ exports.otherCountryUserRegistration = async (req, res) => {
                 const user = new User({ fname, lname, email, phone, address, gender, dob, refferal_id, reffered_id, Id_No, ID_Card, userType, userid, password });
                 await user.save();
                 const phone4 = '+' + user.phone
-                SuccessfullRegistrationSms(phone4, { "userid": user.userid, "password": password })
-                res.status(201).json({ message: "User registered successfully" });
+                // SuccessfullRegistrationSms(phone4, { "userid": user.userid, "password": password })
+                res.status(201).json({ message: "User registered successfully",
+                userid, password
+            });
 
 
             }
